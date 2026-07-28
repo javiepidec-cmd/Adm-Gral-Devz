@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal epidemiológico — Corrientes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.24.0/dist/tabler-icons.min.css">
+<style>
+:root{
+  --brand:#1F4A8B; --brand-2:#4A90D9; --brand-3:#F4B942; --brand-4:#B23A2E;
+  --bg:#F5F6F8; --surface:#fff; --border:#E4E6EA; --border-strong:#D1D5DB;
+  --text:#1F2937; --muted:#6B7280; --dim:#9CA3AF; --accent-bg:#EEF3FA;
+  --ok:#166534; --ok-bg:#DCFCE7; --warn:#92400E; --warn-bg:#FEF3C7; --err:#991B1B; --err-bg:#FEE2E2;
+  --radius:10px; --shadow:0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:'Barlow',system-ui,sans-serif;color:var(--text);background:var(--bg)}
+body{min-height:100vh}
+button{font-family:inherit;cursor:pointer}
+input,select,button{font-family:inherit;font-size:14px}
+a{color:var(--brand);text-decoration:none}
+.hidden{display:none !important}
+
+/* --- Franja institucional --- */
+.p-stripe{display:flex;height:4px;flex-shrink:0}
+.p-stripe>div{flex:1}
+
+/* ==================== LOGIN ==================== */
+.p-login-wrap{min-height:100vh;display:flex;flex-direction:column;background:var(--bg)}
+.p-login-body{flex:1;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+.p-login-card{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);max-width:400px;width:100%;overflow:hidden}
+.p-login-head{background:var(--brand);color:#fff;padding:20px 24px;display:flex;align-items:center;gap:12px}
+.p-login-logo{width:42px;height:42px;border-radius:50%;background:#fff;color:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;letter-spacing:.5px}
+.p-login-head h1{font-size:15px;font-weight:600;margin:0}
+.p-login-head p{font-size:11px;margin:2px 0 0;color:rgba(255,255,255,.8)}
+.p-login-form{padding:24px}
+.p-login-form h2{font-size:16px;font-weight:600;margin:0 0 4px}
+.p-login-form .p-lead{font-size:12px;color:var(--muted);margin:0 0 18px}
+.p-field{margin-bottom:14px}
+.p-field label{display:block;font-size:12px;font-weight:500;color:var(--text);margin-bottom:5px}
+.p-field input,.p-field select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fff}
+.p-field input:focus,.p-field select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--accent-bg)}
+.p-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border:none;border-radius:8px;font-size:14px;font-weight:600;background:var(--brand);color:#fff;width:100%}
+.p-btn:hover{background:#173a70}
+.p-btn:disabled{background:var(--border-strong);cursor:wait}
+.p-btn-ghost{background:transparent;color:var(--brand);border:1px solid var(--border)}
+.p-btn-ghost:hover{background:var(--accent-bg)}
+.p-alert{padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start}
+.p-alert i{font-size:16px;flex-shrink:0}
+.p-alert-err{background:var(--err-bg);color:var(--err)}
+.p-alert-warn{background:var(--warn-bg);color:var(--warn)}
+.p-alert-ok{background:var(--ok-bg);color:var(--ok)}
+.p-link-row{text-align:center;margin-top:14px;font-size:12px;color:var(--muted)}
+.p-link-row button{background:none;border:none;color:var(--brand);font-weight:600;padding:0;font-size:12px}
+
+/* ==================== PORTAL ==================== */
+.p-portal{min-height:100vh;display:flex;flex-direction:column}
+.p-head{background:var(--brand);padding:12px 20px;display:flex;align-items:center;gap:14px}
+.p-head .p-logo{width:36px;height:36px;border-radius:50%;background:#fff;color:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.p-head-txt h1{color:#fff;font-size:15px;font-weight:600;margin:0;line-height:1.2}
+.p-head-txt p{color:rgba(255,255,255,.75);font-size:11px;margin:2px 0 0}
+.p-head-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.p-head-actions i{color:rgba(255,255,255,.85);font-size:20px;cursor:pointer}
+.p-head-mobile{display:none;background:none;border:none;color:#fff;font-size:22px}
+
+.p-body{display:flex;flex:1;min-height:0;position:relative;overflow:hidden}
+
+/* Sidebar */
+.p-side{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:18px 0;display:flex;flex-direction:column;overflow-y:auto}
+.p-user-box{padding:0 18px 16px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.p-avatar{width:46px;height:46px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;margin-bottom:10px}
+.p-user-name{font-size:14px;font-weight:600;color:var(--text);margin:0}
+.p-role-chip{display:inline-flex;align-items:center;gap:5px;background:var(--accent-bg);color:var(--brand);font-size:10px;font-weight:600;padding:3px 8px;border-radius:10px;margin:5px 0 0;text-transform:uppercase;letter-spacing:.3px}
+.p-user-inst{font-size:11px;color:var(--dim);margin:6px 0 0;line-height:1.35}
+.p-nav{padding:0 10px;display:flex;flex-direction:column;gap:2px;flex:1}
+.p-nav-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:7px;font-size:13px;color:#4B5563;background:none;border:none;text-align:left;width:100%;cursor:pointer}
+.p-nav-item i{font-size:16px}
+.p-nav-item:hover{background:var(--bg)}
+.p-nav-item.active{background:var(--accent-bg);color:var(--brand);font-weight:600}
+.p-nav-foot{padding:10px 10px 0;border-top:1px solid var(--border);margin-top:10px}
+.p-nav-foot .p-nav-item{color:var(--brand-4)}
+.p-nav-foot .p-nav-item:hover{background:#FBE9E7}
+
+/* Main */
+.p-main{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+#page-home, #page-perfil, #page-config{flex:1;min-height:0;overflow-y:auto;padding:24px 28px}
+#page-tool{flex:1;min-height:0;display:flex;flex-direction:column}
+
+/* Barra superior de la herramienta embebida */
+.p-tool-bar{flex-shrink:0;background:#fff;border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:10px}
+.p-tool-back{background:none;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--brand);font-weight:600;display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.p-tool-back:hover{background:var(--accent-bg)}
+.p-tool-crumb{flex:1;min-width:0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-tool-crumb strong{color:var(--text);font-weight:600}
+.p-tool-ext{color:var(--muted);font-size:18px;padding:4px 6px;border-radius:6px;display:inline-flex}
+.p-tool-ext:hover{background:var(--accent-bg);color:var(--brand)}
+.p-tool-frame{flex:1;border:0;width:100%;background:#fff;min-height:0}
+
+/* Indicador de herramienta abierta en el sidebar */
+.p-side-tool{position:relative;cursor:pointer;padding:10px 14px;margin:0 10px 12px;background:var(--accent-bg);border-radius:8px;border-left:3px solid var(--brand)}
+.p-side-tool:hover{background:#DDE7F5}
+.p-side-tool-lbl{font-size:9px;color:var(--brand);margin:0;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+.p-side-tool-name{font-size:12px;color:var(--text);font-weight:600;margin:3px 0 0}
+
+/* Lista de herramientas abiertas (múltiples tabs verticales) */
+.p-side-tools-list{margin:0 0 8px;display:flex;flex-direction:column;gap:6px}
+.p-side-tools-list .p-side-tool{margin:0 10px}
+.p-side-tools-list .p-side-tool.active{background:#DDE7F5;border-left-width:4px;box-shadow:inset 0 0 0 1px rgba(31,74,139,.15)}
+.p-side-tools-list .p-side-tool.active .p-side-tool-name{color:var(--brand)}
+.p-side-tool-close{position:absolute;top:6px;right:6px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;border-radius:4px}
+.p-side-tool-close:hover{background:rgba(0,0,0,.06);color:var(--text)}
+
+/* Contenedor de iframes múltiples: sólo uno visible por vez.
+   position:relative para que los iframes hijos con position:absolute se
+   apoyen en él. NO uso display:flex acá para no interferir con el layout
+   absoluto de los iframes. width/height 100% explícitos son más robustos
+   que `inset:0` cuando el iframe arranca con display:none. */
+.p-tool-frames{flex:1;min-height:0;position:relative;overflow:hidden}
+.p-tool-frames .p-tool-frame{position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#fff;display:none}
+.p-tool-frames .p-tool-frame.active{display:block}
+
+/* Cuando la vista activa es "tool", el header horizontal se oculta para no
+   tapar las etiquetas de totales (KPIs) del dashboard u otras herramientas */
+#view-portal.p-in-tool > .p-head{display:none}
+
+/* Botón hamburguesa dentro de la barra del iframe, sólo visible en pantallas
+   chicas — permite abrir el sidebar sin tener que volver a Inicio primero */
+.p-tool-menu{display:none;background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:4px 6px;border-radius:6px}
+.p-tool-menu:hover{background:#F0F1F4;color:var(--text)}
+@media (max-width: 900px){ .p-tool-menu{display:inline-flex;align-items:center;justify-content:center} }
+.p-crumb{font-size:11px;color:var(--muted);margin:0 0 4px;text-transform:uppercase;letter-spacing:.3px}
+.p-title{font-size:22px;font-weight:600;color:var(--text);margin:0 0 4px}
+.p-sub{font-size:13px;color:var(--muted);margin:0 0 24px}
+
+.p-sec-head{display:flex;align-items:baseline;gap:10px;margin:0 0 12px}
+.p-sec-dot{width:6px;height:6px;border-radius:50%;background:var(--brand);align-self:center}
+.p-sec-title{font-size:12px;font-weight:600;color:var(--brand);letter-spacing:.5px;text-transform:uppercase;margin:0}
+.p-sec-dep{font-size:11px;color:var(--dim);margin-left:auto}
+
+/* Cards view */
+.p-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px}
+.p-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--brand);border-radius:var(--radius);padding:16px;position:relative;transition:border-color .15s,transform .1s;cursor:pointer}
+.p-card:hover{border-color:var(--brand);transform:translateY(-1px)}
+.p-card.locked{border-left-color:var(--border-strong);background:#FAFAFA;cursor:not-allowed}
+.p-card.locked:hover{transform:none;border-color:var(--border)}
+.p-card.locked .p-card-icon,.p-card.locked .p-card-name,.p-card.locked .p-card-sub,.p-card.locked .p-card-cta{color:var(--dim)}
+.p-card-icon{font-size:22px;color:var(--brand)}
+.p-card-name{font-size:13px;font-weight:600;color:var(--text);margin:10px 0 3px}
+.p-card-sub{font-size:11px;color:var(--muted);margin:0 0 12px;line-height:1.4;min-height:30px}
+.p-card-cta{font-size:11px;color:var(--brand);font-weight:600;padding-top:8px;border-top:1px solid #F0F1F4;display:flex;justify-content:space-between;align-items:center}
+.p-card-lock{position:absolute;top:12px;right:12px;font-size:14px;color:var(--dim)}
+
+/* List view */
+.p-list{display:flex;flex-direction:column;gap:6px;margin-bottom:24px}
+.p-list-item{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--brand);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .15s}
+.p-list-item:hover{border-color:var(--brand)}
+.p-list-item.locked{border-left-color:var(--border-strong);background:#FAFAFA;cursor:not-allowed;color:var(--dim)}
+.p-list-item i.p-li-icon{font-size:20px;color:var(--brand)}
+.p-list-item.locked i.p-li-icon{color:var(--dim)}
+.p-li-body{flex:1;min-width:0}
+.p-li-name{font-size:13px;font-weight:600;color:var(--text);margin:0}
+.p-list-item.locked .p-li-name{color:var(--dim)}
+.p-li-sub{font-size:11px;color:var(--muted);margin:2px 0 0}
+.p-li-arr{font-size:16px;color:var(--brand)}
+.p-list-item.locked .p-li-arr{display:none}
+
+/* Perfil */
+.p-profile-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;max-width:520px}
+.p-profile-row{display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.p-profile-avatar{width:64px;height:64px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:22px}
+.p-profile-info h3{font-size:18px;font-weight:600;margin:0}
+.p-profile-info p{font-size:12px;color:var(--muted);margin:2px 0 0}
+.p-data-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F0F1F4;font-size:13px}
+.p-data-row:last-child{border-bottom:none}
+.p-data-row .lbl{color:var(--muted)}
+.p-data-row .val{font-weight:500}
+.p-perm-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.p-perm{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.p-perm.on{background:var(--ok-bg);color:var(--ok)}
+.p-perm.off{background:#F3F4F6;color:var(--dim)}
+
+/* Configuración */
+.p-cfg-block{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:14px;max-width:520px}
+.p-cfg-head{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.p-cfg-head i{font-size:18px;color:var(--brand)}
+.p-cfg-head h4{font-size:14px;font-weight:600;color:var(--text);margin:0}
+.p-cfg-view-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.p-cfg-view-opt{border:1px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .15s}
+.p-cfg-view-opt:hover{border-color:var(--brand)}
+.p-cfg-view-opt.sel{border:2px solid var(--brand);background:var(--accent-bg);padding:11px 7px}
+.p-cfg-view-opt i{font-size:22px;color:var(--brand)}
+.p-cfg-view-opt p{font-size:12px;font-weight:500;color:var(--text);margin:5px 0 0}
+.p-cfg-sort{display:flex;flex-direction:column;gap:6px}
+.p-cfg-sort-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#FAFAFA;border:1px solid var(--border);border-radius:6px}
+.p-cfg-sort-item i.grip{color:var(--dim);font-size:16px;cursor:grab}
+.p-cfg-sort-item span{font-size:13px;color:var(--text);flex:1;font-weight:500}
+.p-cfg-sort-item button{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:2px 6px;border-radius:4px}
+.p-cfg-sort-item button:hover{background:var(--surface);color:var(--brand)}
+
+/* Loading spinner */
+.p-spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp 0.7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Toast */
+.p-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;transition:opacity .2s}
+.p-toast.show{opacity:1}
+
+/* Fondo del drawer (siempre en el DOM, solo visible al abrir en mobile) */
+.p-side-back{position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:15;display:none}
+
+/* ==================== Responsive ==================== */
+@media (max-width: 900px){
+  .p-side{position:absolute;top:0;bottom:0;left:0;z-index:20;transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 16px rgba(0,0,0,.15)}
+  .p-side.open{transform:translateX(0)}
+  .p-head-mobile{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:4px 8px}
+  #page-home, #page-perfil, #page-config{padding:18px 16px}
+  .p-title{font-size:19px}
+  .p-side-back.show{display:block}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== LOGIN VIEW ==================== -->
+<div id="view-login" class="p-login-wrap">
+  <div class="p-stripe">
+    <div style="background:#1F4A8B"></div>
+    <div style="background:#4A90D9"></div>
+    <div style="background:#F4B942"></div>
+    <div style="background:#B23A2E"></div>
+  </div>
+  <div class="p-login-body">
+    <div class="p-login-card">
+      <div class="p-login-head">
+        <div class="p-login-logo">MSP</div>
+        <div>
+          <h1>Portal epidemiológico</h1>
+          <p>Ministerio de Salud Pública · Corrientes</p>
+        </div>
+      </div>
+      <div class="p-login-form">
+        <h2>Iniciar sesión</h2>
+        <p class="p-lead">Ingresá con tu correo institucional.</p>
+
+        <div id="login-alert"></div>
+
+        <div class="p-field">
+          <label for="login-email">Correo</label>
+          <input type="email" id="login-email" placeholder="nombre@salud.gob.ar" autocomplete="email">
+        </div>
+
+        <button class="p-btn" id="login-btn" onclick="doLogin()">
+          <i class="ti ti-login-2"></i> Ingresar
+        </button>
+
+        <div class="p-link-row">
+          ¿No tenés cuenta? <button onclick="goSolicitud()">Solicitar acceso</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SOLICITUD VIEW ==================== -->
+<div id="view-solicitud" class="p-login-wrap hidden">
+  <div class="p-stripe">
+    <div style="background:#1F4A8B"></div>
+    <div style="background:#4A90D9"></div>
+    <div style="background:#F4B942"></div>
+    <div style="background:#B23A2E"></div>
+  </div>
+  <div class="p-login-body">
+    <div class="p-login-card">
+      <div class="p-login-head">
+        <div class="p-login-logo">MSP</div>
+        <div>
+          <h1>Portal epidemiológico</h1>
+          <p>Ministerio de Salud Pública · Corrientes</p>
+        </div>
+      </div>
+      <div class="p-login-form">
+        <h2>Solicitar acceso</h2>
+        <p class="p-lead">Completá los datos. Un administrador revisará tu solicitud.</p>
+
+        <div id="sol-alert"></div>
+
+        <div class="p-field">
+          <label>Nombre completo</label>
+          <input type="text" id="sol-nombre">
+        </div>
+        <div class="p-field">
+          <label>Correo institucional</label>
+          <input type="email" id="sol-correo">
+        </div>
+        <div class="p-field">
+          <label>Establecimiento / Zona</label>
+          <input type="text" id="sol-establecimiento" placeholder="Ej: Hospital Vidal, Zona II Goya, Dir. Zoonosis">
+        </div>
+
+        <button class="p-btn" id="sol-btn" onclick="doSolicitud()">
+          <i class="ti ti-send"></i> Enviar solicitud
+        </button>
+
+        <div class="p-link-row">
+          <button onclick="goLogin()">← Volver al inicio</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PORTAL VIEW ==================== -->
+<div id="view-portal" class="p-portal hidden">
+  <div class="p-stripe">
+    <div style="background:#1F4A8B"></div>
+    <div style="background:#4A90D9"></div>
+    <div style="background:#F4B942"></div>
+    <div style="background:#B23A2E"></div>
+  </div>
+
+  <header class="p-head">
+    <button class="p-head-mobile" onclick="toggleSide()"><i class="ti ti-menu-2"></i></button>
+    <div class="p-logo">MSP</div>
+    <div class="p-head-txt">
+      <h1>Portal epidemiológico</h1>
+      <p>Ministerio de Salud Pública · Corrientes</p>
+    </div>
+    <div class="p-head-actions">
+      <i class="ti ti-bell" title="Notificaciones"></i>
+    </div>
+  </header>
+
+  <div class="p-body">
+    <div class="p-side-back" onclick="toggleSide()"></div>
+    <aside class="p-side" id="side">
+      <div class="p-user-box">
+        <div class="p-avatar" id="side-avatar">--</div>
+        <p class="p-user-name" id="side-name">—</p>
+        <span class="p-role-chip"><i class="ti ti-shield-check" style="font-size:11px"></i><span id="side-rol">—</span></span>
+        <p class="p-user-inst" id="side-inst">—</p>
+      </div>
+      <nav class="p-nav">
+        <div class="p-side-tools-list" id="side-tools-list"><!-- se agregan items dinámicamente --></div>
+        <button class="p-nav-item active" data-page="home" onclick="goPage('home')"><i class="ti ti-home"></i>Inicio</button>
+        <button class="p-nav-item" data-page="perfil" onclick="goPage('perfil')"><i class="ti ti-user"></i>Mi perfil</button>
+        <button class="p-nav-item" data-page="config" onclick="goPage('config')"><i class="ti ti-settings"></i>Configuración</button>
+        <div class="p-nav-foot">
+          <button class="p-nav-item" onclick="doLogout()"><i class="ti ti-logout"></i>Cerrar sesión</button>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="p-main">
+      <!-- PÁGINA: HOME -->
+      <section id="page-home">
+        <p class="p-crumb">Inicio</p>
+        <h2 class="p-title" id="home-greet">Buen día</h2>
+        <p class="p-sub" id="home-sub">Herramientas disponibles según tu rol.</p>
+        <div id="home-content"><!-- se renderiza dinámicamente --></div>
+      </section>
+
+      <!-- PÁGINA: PERFIL -->
+      <section id="page-perfil" class="hidden">
+        <p class="p-crumb">Inicio · Mi perfil</p>
+        <h2 class="p-title">Mi perfil</h2>
+        <p class="p-sub">Datos de tu cuenta y permisos asignados.</p>
+        <div class="p-profile-card" id="perfil-content"><!-- dinámico --></div>
+      </section>
+
+      <!-- PÁGINA: CONFIG -->
+      <section id="page-config" class="hidden">
+        <p class="p-crumb">Inicio · Configuración</p>
+        <h2 class="p-title">Preferencias</h2>
+        <p class="p-sub">Personalizá cómo ves el portal. Se guardan en este dispositivo.</p>
+
+        <div class="p-cfg-block">
+          <div class="p-cfg-head"><i class="ti ti-layout-2"></i><h4>Vista de las herramientas</h4></div>
+          <div class="p-cfg-view-opts">
+            <div class="p-cfg-view-opt" data-view="cards" onclick="setView('cards')"><i class="ti ti-layout-grid"></i><p>Tarjetas</p></div>
+            <div class="p-cfg-view-opt" data-view="list" onclick="setView('list')"><i class="ti ti-list"></i><p>Lista</p></div>
+            <div class="p-cfg-view-opt" data-view="compact" onclick="setView('compact')"><i class="ti ti-layout-rows"></i><p>Compacta</p></div>
+          </div>
+        </div>
+
+        <div class="p-cfg-block">
+          <div class="p-cfg-head"><i class="ti ti-arrows-sort"></i><h4>Orden de secciones</h4></div>
+          <div class="p-cfg-sort" id="cfg-sort"><!-- dinámico --></div>
+        </div>
+      </section>
+
+      <!-- PÁGINA: HERRAMIENTA (iframe) -->
+      <section id="page-tool" class="hidden">
+        <div class="p-tool-bar">
+          <button class="p-tool-menu" onclick="toggleSide()" title="Abrir menú"><i class="ti ti-menu-2"></i></button>
+          <button class="p-tool-back" onclick="goPage('home')"><i class="ti ti-arrow-left"></i>Volver</button>
+          <span class="p-tool-crumb">Inicio · <strong id="tool-title">—</strong></span>
+          <a class="p-tool-ext" id="tool-ext" target="_blank" title="Abrir en pestaña nueva"><i class="ti ti-external-link"></i></a>
+        </div>
+        <div class="p-tool-frames" id="tool-frames"><!-- iframes se agregan dinámicamente --></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="p-toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN — editá acá para adaptar el portal
+// ============================================================
+const CFG = {
+  SHEET_ID: '1bnDNLP3BVmSYsOSwO7uBN9CYMvtWoK8RpC-yatc_HM0',
+  USUARIOS_SHEET: 'USUARIOS',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyfHOxY7NFIsGttGq1A5etYhSghpfq-vjuZQWh9TmRoIaF8hl98RVLtyW1LgmcrXjk/exec',
+  SECRET: 'k7pR9xN2mLqW4vJ8sT3yA6bH5cF1eD0zGu',
+
+  // Presets por rol → permisos base.
+  // Para 'operario' y 'tecnico', los permisos se FILTRAN después según la columna H = AREA
+  // (cf o tr). 'directivo' y 'administrativo' no dependen de área.
+  // Columnas esperadas en USUARIOS_GRAL: G=ROL, H=AREA
+  ROL_PRESETS: {
+    'operario':      { cf_carga:1, cf_panel:0, tr_carga:1, tr_panel:0, boletin:0 },
+    'tecnico':       { cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, boletin:1 },
+    'directivo':     { cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, boletin:1 },
+    'administrativo':{ cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, boletin:1 }
+  },
+
+  // Herramientas del portal — modificá URLs cuando estén los archivos disponibles
+  SECCIONES: [
+    {
+      id:'cf', nombre:'Vectores', dep:'Control focal y bloqueo',
+      tools:[
+        { id:'cf_mapa', perm:'cf_carga', icono:'ti-map-pin', titulo:'Mapa de carga', sub:'Registro de focos y puntos de intervención', url:'#TODO_mapa_cf',
+          url:'https://javiepidec-cmd.github.io/Mapa-carga-Vectores/MAPA-CARGA-CF-BL.html'},
+        { id:'cf_panel', perm:'cf_panel', icono:'ti-chart-bar', titulo:'Panel general', sub:'Indicadores, cobertura y evolución temporal', url:'#TODO_dashboard_cf',
+          url:'https://javiepidec-cmd.github.io/Dashboard-Vectores/PANEL-GRAL-CF-BL.html'},
+        { id:'cf_boletin', perm:'boletin', icono:'ti-file-text', titulo:'Boletín epidemiológico', sub:'Reporte semanal automatizado', url:'#TODO_boletin',
+          url:'https://javiepidec-cmd.github.io/Boletin-Vectores/BOLETIN-CF-BL-v2.html'}
+      ]
+    },
+    {
+      id:'tr', nombre:'Tenencia responsable', dep:'Dir. de Enfermedades Zoonóticas y Vectoriales',
+      tools:[
+        { id:'tr_mapa', perm:'tr_carga', icono:'ti-vaccine', titulo:'Mapa de carga', sub:'Vacunas, leishmaniasis, laboratorio rabia',
+          url:'https://javiepidec-cmd.github.io/Mapa-carga-TR/MAPA-RENDICION-TR-V2.html' },
+        { id:'tr_panel', perm:'tr_panel', icono:'ti-layout-dashboard', titulo:'Panel general', sub:'Tres bases integradas: vacunas, leish y lab', url:'#TODO_dashboard_tr',
+          url:'https://javiepidec-cmd.github.io/Dashboard-TR/PANEL-GRAL-TR-V2.html' },
+      ]
+    }
+  ]
+};
+
+// ============================================================
+// ESTADO GLOBAL
+// ============================================================
+let SESION = null;      // { correo, nombre, establecimiento, rol, permisos }
+let PREFS = { view:'cards', orden:['cf','tr'] };
+// Herramientas abiertas simultáneamente (múltiples iframes).
+// OPEN_TOOLS = [{ id, titulo, url }] · ACTIVE_TOOL_ID = id de la que se está viendo
+const OPEN_TOOLS = [];
+let ACTIVE_TOOL_ID = null;
+
+// ============================================================
+// UTILIDADES
+// ============================================================
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function initials(name){ return String(name||'').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '—'; }
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+
+function showAlert(container, type, msg){
+  container.innerHTML = `<div class="p-alert p-alert-${type}"><i class="ti ti-${type==='err'?'alert-circle':type==='ok'?'circle-check':'info-circle'}"></i><span>${esc(msg)}</span></div>`;
+}
+
+// ============================================================
+// gviz: leer USUARIOS
+// ============================================================
+async function gvizGet(sheet){
+  const url = `https://docs.google.com/spreadsheets/d/${CFG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheet)}`;
+  const r = await fetch(url);
+  const txt = await r.text();
+  const m = txt.match(/setResponse\((.+)\)/s) || txt.match(/google\.visualization\.Query\.setResponse\((.+)\);?/s);
+  if (!m) throw new Error('gviz: respuesta inesperada');
+  return JSON.parse(m[1]);
+}
+
+function celda(row, i){
+  const c = row.c && row.c[i];
+  if (!c) return '';
+  return c.f != null ? c.f : (c.v != null ? c.v : '');
+}
+
+// ============================================================
+// PERMISOS: resolver por rol + área
+// ============================================================
+function resolverPermisos(rol, area){
+  const rolKey = String(rol||'').toLowerCase().trim();
+  const areaKey = String(area||'').toLowerCase().trim();
+
+  // Si el rol no está en los presets, aplicar el más restrictivo (operario CF)
+  const base = Object.assign({}, CFG.ROL_PRESETS[rolKey] || CFG.ROL_PRESETS['operario']);
+
+  // Operario y técnico se filtran por área
+  if (rolKey === 'operario' || rolKey === 'tecnico'){
+    if (areaKey === 'cf'){
+      base.tr_carga = 0; base.tr_panel = 0;
+    } else if (areaKey === 'tr'){
+      base.cf_carga = 0; base.cf_panel = 0;
+    }
+    // Si area está vacía o dice 'todas', quedan las dos áreas habilitadas
+    // (útil para casos excepcionales como un técnico multi-área)
+  }
+  // Directivo y administrativo ignoran el área: acceden a todo lo del preset
+  return base;
+}
+
+// Etiquetas legibles para mostrar en la UI
+const ROL_NOMBRES = {
+  'operario':'Operario de carga', 'tecnico':'Técnico',
+  'directivo':'Directivo', 'administrativo':'Administrativo'
+};
+const AREA_NOMBRES = { 'cf':'Vectores', 'tr':'Tenencia responsable', 'todas':'Todas las áreas' };
+
+function displayRolLargo(rol, area){
+  const r = ROL_NOMBRES[rol] || rol || '—';
+  if (rol === 'directivo' || rol === 'administrativo') return r;
+  const a = AREA_NOMBRES[area] || area;
+  return a ? `${r} — ${a}` : r;
+}
+
+function displayRolCorto(rol, area){
+  const abrev = { 'cf':'CF', 'tr':'TR', 'todas':'Todas' };
+  const r = ROL_NOMBRES[rol] || rol || '—';
+  if (rol === 'directivo' || rol === 'administrativo') return r;
+  const a = abrev[area] || '';
+  return a ? `${r} · ${a}` : r;
+}
+
+// ============================================================
+// LOGIN
+// ============================================================
+async function doLogin(){
+  const email = $('login-email').value.trim().toLowerCase();
+  const alertBox = $('login-alert');
+  alertBox.innerHTML = '';
+
+  if (!email || !email.includes('@')){
+    showAlert(alertBox, 'err', 'Ingresá un correo válido.');
+    return;
+  }
+
+  const btn = $('login-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="p-spin"></span> Verificando...';
+
+  try {
+    const data = await gvizGet(CFG.USUARIOS_SHEET);
+    const rows = (data.table && data.table.rows) || [];
+
+    // Buscar por correo (columna A = índice 0)
+    const row = rows.find(r => String(celda(r, 0)||'').toLowerCase().trim() === email);
+
+    if (!row){
+      showAlert(alertBox, 'warn', 'Tu correo no está registrado. Solicitá acceso desde el link de abajo.');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-login-2"></i> Ingresar';
+      return;
+    }
+
+    const estado = String(celda(row, 1)||'').toUpperCase().trim();
+    if (estado === 'PENDIENTE'){
+      showAlert(alertBox, 'warn', 'Tu solicitud está pendiente de aprobación.');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-login-2"></i> Ingresar';
+      return;
+    }
+    if (estado === 'RECHAZADO'){
+      showAlert(alertBox, 'err', 'Tu acceso fue rechazado. Contactá al administrador.');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-login-2"></i> Ingresar';
+      return;
+    }
+    if (estado !== 'APROBADO'){
+      showAlert(alertBox, 'err', 'Estado de cuenta desconocido. Contactá al administrador.');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-login-2"></i> Ingresar';
+      return;
+    }
+
+    // OK: armar sesión
+    const rol = String(celda(row, 6)||'operario').toLowerCase().trim();  // G = ROL
+    const area = String(celda(row, 7)||'').toLowerCase().trim();          // H = AREA
+    SESION = {
+      correo: email,
+      nombre: celda(row, 4) || email.split('@')[0],   // E = NOMBRE
+      establecimiento: celda(row, 5) || '—',           // F = ESTABLECIMIENTO
+      rol: rol,
+      area: area,
+      permisos: resolverPermisos(rol, area),
+      ts: Date.now()
+    };
+
+    // Persistir (compartido con otras herramientas del mismo origin GitHub Pages)
+    localStorage.setItem('portal_sesion', JSON.stringify(SESION));
+    entrarPortal();
+
+  } catch(e){
+    console.error(e);
+    showAlert(alertBox, 'err', 'No se pudo conectar. Verificá tu internet.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-login-2"></i> Ingresar';
+  }
+}
+
+// ============================================================
+// SOLICITAR ACCESO
+// Nota: llama al Apps Script actual. Si el action name difiere,
+// ajustá 'solicitar_acceso' por el nombre real en tu script.
+// ============================================================
+async function doSolicitud(){
+  const nombre = $('sol-nombre').value.trim();
+  const correo = $('sol-correo').value.trim().toLowerCase();
+  const est = $('sol-establecimiento').value.trim();
+  const alertBox = $('sol-alert');
+  alertBox.innerHTML = '';
+
+  if (!nombre || !correo || !est){
+    showAlert(alertBox, 'err', 'Completá todos los campos.');
+    return;
+  }
+  if (!correo.includes('@')){
+    showAlert(alertBox, 'err', 'Correo inválido.');
+    return;
+  }
+
+  const btn = $('sol-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="p-spin"></span> Enviando...';
+
+  try {
+    // Formato text/plain para evitar preflight CORS.
+    // Estructura: { secret, action, payload: {...} } — igual a lo que usa mapa_rendicion_v1.
+    const resp = await fetch(CFG.APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        secret: CFG.SECRET,
+        action: 'registrar_usuario',
+        payload: { correo, nombre, establecimiento: est }
+      })
+    });
+    const j = await resp.json().catch(()=>({}));
+
+    if (j && (j.ok === true || j.status === 'ok')){
+      showAlert(alertBox, 'ok', 'Solicitud enviada. Un administrador la revisará.');
+      $('sol-nombre').value = ''; $('sol-correo').value = ''; $('sol-establecimiento').value = '';
+    } else {
+      const err = (j && (j.error || j.mensaje)) || 'No se pudo procesar la solicitud';
+      showAlert(alertBox, 'err', 'No se registró: ' + err);
+    }
+  } catch(e){
+    console.error(e);
+    showAlert(alertBox, 'err', 'No se pudo enviar. Intentá más tarde.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-send"></i> Enviar solicitud';
+  }
+}
+
+// ============================================================
+// NAVEGACIÓN ENTRE VIEWS
+// ============================================================
+function goLogin(){ $('view-login').classList.remove('hidden'); $('view-solicitud').classList.add('hidden'); $('view-portal').classList.add('hidden'); }
+function goSolicitud(){ $('view-login').classList.add('hidden'); $('view-solicitud').classList.remove('hidden'); $('view-portal').classList.add('hidden'); }
+function entrarPortal(){
+  $('view-login').classList.add('hidden'); $('view-solicitud').classList.add('hidden'); $('view-portal').classList.remove('hidden');
+  renderSidebar(); renderHome();
+}
+
+function goPage(p){
+  ['home','perfil','config','tool'].forEach(k=>{
+    $('page-'+k).classList.toggle('hidden', k!==p);
+  });
+  document.querySelectorAll('.p-nav-item[data-page]').forEach(b=>b.classList.toggle('active', b.dataset.page===p));
+  if (p==='perfil') renderPerfil();
+  if (p==='config') renderConfig();
+  // Ocultar el header horizontal del portal SÓLO en la vista de herramienta,
+  // para no tapar los KPIs del dashboard u otras etiquetas superiores
+  $('view-portal').classList.toggle('p-in-tool', p==='tool');
+  toggleSide(true);
+}
+
+function cerrarTool(id){
+  // Si no se pasa id, cerrar TODAS (usado por doLogout)
+  if (id === undefined){
+    OPEN_TOOLS.forEach(t => {
+      const f = $('frame-'+t.id); if (f) f.remove();
+    });
+    OPEN_TOOLS.length = 0;
+    ACTIVE_TOOL_ID = null;
+    renderSideTools();
+    if (!$('page-tool').classList.contains('hidden')) goPage('home');
+    return;
+  }
+  // Cerrar una herramienta específica
+  const idx = OPEN_TOOLS.findIndex(t => t.id === id);
+  if (idx < 0) return;
+  const era_activa = (ACTIVE_TOOL_ID === id);
+  OPEN_TOOLS.splice(idx, 1);
+  const iframeEl = $('frame-'+id); if (iframeEl) iframeEl.remove();
+
+  if (OPEN_TOOLS.length === 0){
+    ACTIVE_TOOL_ID = null;
+    renderSideTools();
+    if (!$('page-tool').classList.contains('hidden')) goPage('home');
+    return;
+  }
+  if (era_activa){
+    // Activar la que quedó en la misma posición (o la última si era la última)
+    const nueva = OPEN_TOOLS[Math.min(idx, OPEN_TOOLS.length - 1)];
+    activarTool(nueva.id);
+  } else {
+    renderSideTools();
+  }
+}
+
+function toggleSide(forceClose){
+  const s = $('side'); const b = document.querySelector('.p-side-back');
+  if (forceClose === true){ s.classList.remove('open'); b.classList.remove('show'); return; }
+  const open = s.classList.toggle('open');
+  b.classList.toggle('show', open);
+}
+
+// ============================================================
+// RENDER SIDEBAR + HOME + PERFIL + CONFIG
+// ============================================================
+function renderSidebar(){
+  $('side-avatar').textContent = initials(SESION.nombre);
+  $('side-name').textContent = SESION.nombre;
+  $('side-rol').textContent = displayRolCorto(SESION.rol, SESION.area);
+  $('side-inst').textContent = SESION.establecimiento;
+}
+
+function saludoHora(){
+  const h = new Date().getHours();
+  if (h < 12) return 'Buen día';
+  if (h < 20) return 'Buenas tardes';
+  return 'Buenas noches';
+}
+
+function renderHome(){
+  const primerNombre = SESION.nombre.split(' ')[0] || '';
+  $('home-greet').textContent = `${saludoHora()}, ${primerNombre}`;
+  const habilitadas = contarHabilitadas();
+  $('home-sub').textContent = habilitadas === 0
+    ? 'No tenés herramientas asignadas. Consultá con el administrador.'
+    : `Tenés acceso a ${habilitadas} ${habilitadas===1?'herramienta':'herramientas'}.`;
+
+  const cont = $('home-content');
+  cont.innerHTML = '';
+
+  // Ordenar secciones según preferencia
+  const ordenadas = PREFS.orden.map(id => CFG.SECCIONES.find(s => s.id === id)).filter(Boolean);
+  // (agregar cualquiera nueva no ordenada, al final)
+  CFG.SECCIONES.forEach(s => { if (!ordenadas.includes(s)) ordenadas.push(s); });
+
+  ordenadas.forEach(sec => {
+    cont.innerHTML += `
+      <div class="p-sec-head">
+        <div class="p-sec-dot"></div>
+        <p class="p-sec-title">${esc(sec.nombre)}</p>
+        <span class="p-sec-dep">${esc(sec.dep)}</span>
+      </div>
+      ${PREFS.view === 'list' || PREFS.view === 'compact' ? renderListSection(sec) : renderCardsSection(sec)}
+    `;
+  });
+}
+
+function renderCardsSection(sec){
+  const html = sec.tools.map(t => {
+    const habil = !!SESION.permisos[t.perm];
+    const cls = habil ? 'p-card' : 'p-card locked';
+    const attr = habil ? `onclick="abrirTool('${t.id}')"` : '';
+    const lock = habil ? '' : '<i class="ti ti-lock p-card-lock"></i>';
+    return `
+      <div class="${cls}" ${attr}>
+        ${lock}
+        <i class="ti ${t.icono} p-card-icon"></i>
+        <p class="p-card-name">${esc(t.titulo)}</p>
+        <p class="p-card-sub">${esc(t.sub)}</p>
+        <div class="p-card-cta"><span>${habil?'Abrir':'Sin permiso'}</span>${habil?'<i class="ti ti-arrow-right"></i>':''}</div>
+      </div>`;
+  }).join('');
+  return `<div class="p-grid">${html}</div>`;
+}
+
+function renderListSection(sec){
+  const html = sec.tools.map(t => {
+    const habil = !!SESION.permisos[t.perm];
+    const cls = habil ? 'p-list-item' : 'p-list-item locked';
+    const attr = habil ? `onclick="abrirTool('${t.id}')"` : '';
+    return `
+      <div class="${cls}" ${attr}>
+        <i class="ti ${t.icono} p-li-icon"></i>
+        <div class="p-li-body">
+          <p class="p-li-name">${esc(t.titulo)}</p>
+          <p class="p-li-sub">${esc(habil?t.sub:'Sin permiso — contactá al administrador')}</p>
+        </div>
+        ${habil?'<i class="ti ti-arrow-right p-li-arr"></i>':'<i class="ti ti-lock p-li-arr" style="color:var(--dim)"></i>'}
+      </div>`;
+  }).join('');
+  return `<div class="p-list">${html}</div>`;
+}
+
+function contarHabilitadas(){
+  let n = 0;
+  CFG.SECCIONES.forEach(s => s.tools.forEach(t => { if (SESION.permisos[t.perm]) n++; }));
+  return n;
+}
+
+function abrirTool(id){
+  let tool = null;
+  CFG.SECCIONES.forEach(s => s.tools.forEach(t => { if (t.id === id) tool = t; }));
+  if (!tool) return;
+  if (!tool.url || tool.url.startsWith('#')) {
+    toast('Esta herramienta todavía no está disponible.');
+    return;
+  }
+
+  // Si la herramienta ya está abierta, sólo activarla
+  const yaAbierta = OPEN_TOOLS.find(t => t.id === id);
+  if (yaAbierta){
+    activarTool(id);
+    goPage('tool');
+    return;
+  }
+
+  // Registrar la nueva herramienta abierta y crear su iframe
+  OPEN_TOOLS.push({ id: tool.id, titulo: tool.titulo, url: tool.url });
+  const cont = $('tool-frames');
+  const iframe = document.createElement('iframe');
+  iframe.className = 'p-tool-frame';
+  iframe.id = 'frame-' + tool.id;
+  iframe.src = tool.url;
+  cont.appendChild(iframe);
+
+  activarTool(tool.id);
+  goPage('tool');
+}
+
+// Activa una de las herramientas ya abiertas (muestra su iframe, actualiza sidebar y barra)
+function activarTool(id){
+  const tool = OPEN_TOOLS.find(t => t.id === id);
+  if (!tool) return;
+  ACTIVE_TOOL_ID = id;
+  // Marcar el iframe activo (uno visible, resto ocultos)
+  document.querySelectorAll('#tool-frames .p-tool-frame').forEach(f => {
+    f.classList.toggle('active', f.id === 'frame-' + id);
+  });
+  // Actualizar barra superior de la vista tool
+  $('tool-title').textContent = tool.titulo;
+  $('tool-ext').href = tool.url;
+  // Actualizar sidebar
+  renderSideTools();
+}
+
+// Renderiza la lista de herramientas abiertas en el sidebar
+function renderSideTools(){
+  const cont = $('side-tools-list');
+  if (!cont) return;
+  cont.innerHTML = OPEN_TOOLS.map(t => `
+    <div class="p-side-tool ${t.id === ACTIVE_TOOL_ID ? 'active' : ''}"
+         onclick="activarTool('${t.id}'); goPage('tool')"
+         title="Ir a ${esc(t.titulo)}">
+      <button class="p-side-tool-close"
+              onclick="event.stopPropagation();cerrarTool('${t.id}')"
+              title="Cerrar herramienta"><i class="ti ti-x"></i></button>
+      <p class="p-side-tool-lbl">Herramienta abierta</p>
+      <p class="p-side-tool-name">${esc(t.titulo)}</p>
+    </div>`).join('');
+}
+
+function renderPerfil(){
+  const p = SESION.permisos;
+  const chip = (on, txt) => `<span class="p-perm ${on?'on':'off'}">${txt}</span>`;
+  const areaLegible = AREA_NOMBRES[SESION.area] || (SESION.area || '—');
+  const mostrarArea = SESION.rol === 'operario' || SESION.rol === 'tecnico';
+  $('perfil-content').innerHTML = `
+    <div class="p-profile-row">
+      <div class="p-profile-avatar">${initials(SESION.nombre)}</div>
+      <div class="p-profile-info">
+        <h3>${esc(SESION.nombre)}</h3>
+        <p>${esc(SESION.correo)}</p>
+      </div>
+    </div>
+    <div class="p-data-row"><span class="lbl">Rol</span><span class="val">${esc(ROL_NOMBRES[SESION.rol] || SESION.rol)}</span></div>
+    ${mostrarArea ? `<div class="p-data-row"><span class="lbl">Área</span><span class="val">${esc(areaLegible)}</span></div>` : ''}
+    <div class="p-data-row"><span class="lbl">Establecimiento</span><span class="val">${esc(SESION.establecimiento)}</span></div>
+    <div class="p-data-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+      <span class="lbl">Permisos asignados</span>
+      <div class="p-perm-list">
+        ${chip(p.cf_carga, 'CF carga')}
+        ${chip(p.cf_panel, 'CF panel')}
+        ${chip(p.tr_carga, 'TR carga')}
+        ${chip(p.tr_panel, 'TR panel')}
+        ${chip(p.boletin,  'Boletín')}
+      </div>
+    </div>
+  `;
+}
+
+function renderConfig(){
+  document.querySelectorAll('.p-cfg-view-opt').forEach(o => {
+    o.classList.toggle('sel', o.dataset.view === PREFS.view);
+  });
+  const cont = $('cfg-sort');
+  cont.innerHTML = '';
+  PREFS.orden.forEach((id, idx) => {
+    const sec = CFG.SECCIONES.find(s => s.id === id); if (!sec) return;
+    cont.innerHTML += `
+      <div class="p-cfg-sort-item">
+        <i class="ti ti-grip-vertical grip"></i>
+        <span>${esc(sec.nombre)}</span>
+        <button ${idx===0?'disabled style="opacity:.3"':''} onclick="moverSec(${idx},-1)"><i class="ti ti-arrow-up"></i></button>
+        <button ${idx===PREFS.orden.length-1?'disabled style="opacity:.3"':''} onclick="moverSec(${idx},1)"><i class="ti ti-arrow-down"></i></button>
+      </div>`;
+  });
+}
+
+function setView(v){
+  PREFS.view = v;
+  guardarPrefs();
+  document.querySelectorAll('.p-cfg-view-opt').forEach(o => o.classList.toggle('sel', o.dataset.view === v));
+  renderHome();
+  toast('Vista actualizada');
+}
+
+function moverSec(idx, delta){
+  const nuevoIdx = idx + delta;
+  if (nuevoIdx < 0 || nuevoIdx >= PREFS.orden.length) return;
+  const arr = PREFS.orden.slice();
+  [arr[idx], arr[nuevoIdx]] = [arr[nuevoIdx], arr[idx]];
+  PREFS.orden = arr;
+  guardarPrefs();
+  renderConfig();
+  renderHome();
+}
+
+function guardarPrefs(){ localStorage.setItem('portal_prefs_v1', JSON.stringify(PREFS)); }
+
+function doLogout(){
+  if (!confirm('¿Cerrar sesión?')) return;
+  localStorage.removeItem('portal_sesion');
+  cerrarTool();  // sin id → cierra todas las herramientas abiertas
+  SESION = null;
+  goLogin();
+  $('login-email').value = '';
+  $('login-alert').innerHTML = '';
+}
+
+// ============================================================
+// INIT: recuperar sesión y prefs
+// ============================================================
+(function init(){
+  // Prefs
+  try {
+    const p = JSON.parse(localStorage.getItem('portal_prefs_v1') || 'null');
+    if (p && p.view) PREFS.view = p.view;
+    if (p && Array.isArray(p.orden)) PREFS.orden = p.orden;
+  } catch(e){}
+
+  // Sesión
+  try {
+    const s = JSON.parse(localStorage.getItem('portal_sesion') || 'null');
+    if (s && s.correo && s.permisos){
+      // Vence a las 12 horas
+      const edadHs = (Date.now() - (s.ts||0)) / (1000*60*60);
+      if (edadHs < 12){
+        SESION = s;
+        entrarPortal();
+        return;
+      } else {
+        localStorage.removeItem('portal_sesion');
+      }
+    }
+  } catch(e){}
+
+  // Enter para login rápido
+  $('login-email').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+})();
+</script>
+</body>
+</html>
