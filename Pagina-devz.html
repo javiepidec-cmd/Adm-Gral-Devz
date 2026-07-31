@@ -419,13 +419,13 @@ const CFG = {
 
   // Presets por rol → permisos base.
   // Para 'operario' y 'tecnico', los permisos se FILTRAN después según la columna H = AREA
-  // (cf o tr). 'directivo' y 'administrativo' no dependen de área.
+  // (cf, tr o devz). 'directivo' y 'administrativo' no dependen de área.
   // Columnas esperadas en USUARIOS_GRAL: G=ROL, H=AREA
   ROL_PRESETS: {
-    'operario':      { cf_carga:1, cf_panel:0, tr_carga:1, tr_panel:0, boletin:0 },
-    'tecnico':       { cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, boletin:1 },
-    'directivo':     { cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, boletin:1 },
-    'administrativo':{ cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, boletin:1 }
+    'operario':      { cf_carga:1, cf_panel:0, tr_carga:1, tr_panel:0, boletin:0, inund_carga:1 },
+    'tecnico':       { cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, boletin:1, inund_carga:1 },
+    'directivo':     { cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, boletin:1, inund_carga:1 },
+    'administrativo':{ cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, boletin:1, inund_carga:1 }
   },
 
   // Herramientas del portal — modificá URLs cuando estén los archivos disponibles
@@ -449,7 +449,16 @@ const CFG = {
         { id:'tr_panel', perm:'tr_panel', icono:'ti-layout-dashboard', titulo:'Panel general', sub:'Tres bases integradas: vacunas, leish y lab', url:'#TODO_dashboard_tr',
           url:'https://javiepidec-cmd.github.io/Dashboard-TR/PANEL-GRAL-TR-V2.html' },
       ]
-    }
+    },
+    {
+      id:'devz', nombre:'Inundaciones', dep:'Gestión de centros de evacuación',
+      tools:[
+        { id:'inund_mapa', perm:'inund_carga', icono:'ti-map-pin',
+          titulo:'Mapa de centros de evacuación',
+          sub:'Alerta hidrométrica INA y gestión de centros',
+          url:'https://javiepidec-cmd.github.io/Mapa-hidrometrico-carga-centro-evacuados/mapa_hidrometrico_v23.html' }
+      ]
+    },
   ]
 };
 
@@ -457,7 +466,7 @@ const CFG = {
 // ESTADO GLOBAL
 // ============================================================
 let SESION = null;      // { correo, nombre, establecimiento, rol, permisos }
-let PREFS = { view:'cards', orden:['cf','tr'] };
+let PREFS = { view:'cards', orden:['cf','tr','devz'] };
 // Herramientas abiertas simultáneamente (múltiples iframes).
 // OPEN_TOOLS = [{ id, titulo, url }] · ACTIVE_TOOL_ID = id de la que se está viendo
 const OPEN_TOOLS = [];
@@ -507,10 +516,17 @@ function resolverPermisos(rol, area){
   if (rolKey === 'operario' || rolKey === 'tecnico'){
     if (areaKey === 'cf'){
       base.tr_carga = 0; base.tr_panel = 0;
+      base.inund_carga = 0;
     } else if (areaKey === 'tr'){
       base.cf_carga = 0; base.cf_panel = 0;
+      base.inund_carga = 0;
+    } else if (areaKey === 'devz'){
+      // Área inundaciones: solo ve lo de inundaciones, nada de cf ni tr
+      base.cf_carga = 0; base.cf_panel = 0;
+      base.tr_carga = 0; base.tr_panel = 0;
+      base.boletin = 0;
     }
-    // Si area está vacía o dice 'todas', quedan las dos áreas habilitadas
+    // Si area está vacía o dice 'todas', quedan todas las áreas habilitadas
     // (útil para casos excepcionales como un técnico multi-área)
   }
   // Directivo y administrativo ignoran el área: acceden a todo lo del preset
@@ -522,7 +538,7 @@ const ROL_NOMBRES = {
   'operario':'Operario de carga', 'tecnico':'Técnico',
   'directivo':'Directivo', 'administrativo':'Administrativo'
 };
-const AREA_NOMBRES = { 'cf':'Vectores', 'tr':'Tenencia responsable', 'todas':'Todas las áreas' };
+const AREA_NOMBRES = { 'cf':'Vectores', 'tr':'Tenencia responsable', 'devz':'Inundaciones', 'todas':'Todas las áreas' };
 
 function displayRolLargo(rol, area){
   const r = ROL_NOMBRES[rol] || rol || '—';
@@ -532,7 +548,7 @@ function displayRolLargo(rol, area){
 }
 
 function displayRolCorto(rol, area){
-  const abrev = { 'cf':'CF', 'tr':'TR', 'todas':'Todas' };
+  const abrev = { 'cf':'CF', 'tr':'TR', 'devz':'Inund.', 'todas':'Todas' };
   const r = ROL_NOMBRES[rol] || rol || '—';
   if (rol === 'directivo' || rol === 'administrativo') return r;
   const a = abrev[area] || '';
@@ -593,12 +609,14 @@ async function doLogin(){
     // OK: armar sesión
     const rol = String(celda(row, 6)||'operario').toLowerCase().trim();  // G = ROL
     const area = String(celda(row, 7)||'').toLowerCase().trim();          // H = AREA
+    const muniAsignado = String(celda(row, 9)||'').trim();                // J = MUNI_ASIGNADO
     SESION = {
       correo: email,
       nombre: celda(row, 4) || email.split('@')[0],   // E = NOMBRE
       establecimiento: celda(row, 5) || '—',           // F = ESTABLECIMIENTO
       rol: rol,
       area: area,
+      muni_asignado: muniAsignado,                     // J = MUNI_ASIGNADO (para tools con capa municipal)
       permisos: resolverPermisos(rol, area),
       ts: Date.now()
     };
