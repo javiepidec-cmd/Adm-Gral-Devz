@@ -64,6 +64,13 @@ a{color:var(--brand);text-decoration:none}
 .p-head-txt p{color:rgba(255,255,255,.75);font-size:11px;margin:2px 0 0}
 .p-head-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
 .p-head-actions i{color:rgba(255,255,255,.85);font-size:20px;cursor:pointer}
+/* v4: notificaciones */
+.notif-item{padding:12px 14px;border-bottom:1px solid #e5e7eb;cursor:pointer;transition:background .15s}
+.notif-item:hover{background:#f9fafb}
+.notif-item.no-leida{background:#eff6ff;border-left:3px solid #1F4A8B}
+.notif-item .n-titulo{font-weight:600;color:#1F4A8B;font-size:13px;margin-bottom:3px}
+.notif-item .n-mensaje{color:#374151;font-size:12px;line-height:1.4;white-space:pre-line}
+.notif-item .n-fecha{color:#6b7280;font-size:11px;margin-top:5px}
 .p-head-mobile{display:none;background:none;border:none;color:#fff;font-size:22px}
 
 .p-body{display:flex;flex:1;min-height:0;position:relative;overflow:hidden}
@@ -329,9 +336,26 @@ a{color:var(--brand);text-decoration:none}
       <p>Ministerio de Salud Pública · Corrientes</p>
     </div>
     <div class="p-head-actions">
-      <i class="ti ti-bell" title="Notificaciones"></i>
+      <div class="notif-wrap" style="position:relative">
+        <i class="ti ti-bell" id="notif-bell" title="Notificaciones" style="position:relative"></i>
+        <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-6px;background:#F4492E;color:#fff;border-radius:10px;padding:1px 5px;font-size:10px;font-weight:700;min-width:14px;text-align:center">0</span>
+      </div>
     </div>
   </header>
+
+  <!-- Panel de notificaciones (se despliega al clickear la campana) -->
+  <div id="notif-panel" style="display:none;position:fixed;top:56px;right:14px;width:360px;max-height:70vh;background:#fff;border-radius:8px;box-shadow:0 6px 22px rgba(0,0,0,.18);z-index:2000;overflow:hidden;font-family:'Barlow',sans-serif">
+    <div style="background:#1F4A8B;color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-weight:600">🔔 Notificaciones</span>
+      <div style="display:flex;gap:8px">
+        <button id="notif-marcar-todas" title="Marcar todas como leídas" style="background:none;border:none;color:#fff;cursor:pointer;font-size:12px;text-decoration:underline">Todas leídas</button>
+        <button id="notif-cerrar" style="background:none;border:none;color:#fff;font-size:18px;line-height:1;cursor:pointer">×</button>
+      </div>
+    </div>
+    <div id="notif-lista" style="overflow-y:auto;max-height:calc(70vh - 40px)">
+      <div style="padding:20px;text-align:center;color:#6b7280;font-size:13px">Cargando…</div>
+    </div>
+  </div>
 
   <div class="p-body">
     <div class="p-side-back" onclick="toggleSide()"></div>
@@ -416,6 +440,11 @@ const CFG = {
   USUARIOS_SHEET: 'USUARIOS',
   APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyfHOxY7NFIsGttGq1A5etYhSghpfq-vjuZQWh9TmRoIaF8hl98RVLtyW1LgmcrXjk/exec',
   SECRET: 'k7pR9xN2mLqW4vJ8sT3yA6bH5cF1eD0zGu',
+
+  // v4: backend del mapa hidrométrico (donde viven las notificaciones)
+  NOTIF_URL: 'https://script.google.com/macros/s/AKfycbwUdIZ9JSwNhCWKNFP-NxN3kFNMBNhVzVJ7NuhUVqLtFjNSnkR2-gUj7L5jiEoC089k0g/exec',
+  NOTIF_SECRET: 'y8ad5YTHkuwPBPLs069j7DLxvT8sBu505i56ySRd',
+  NOTIF_POLLING_MS: 60000, // cada 60 segundos
 
   // Presets por rol → permisos base.
   // Para 'operario' y 'tecnico', los permisos se FILTRAN después según la columna H = AREA
@@ -696,6 +725,8 @@ function goSolicitud(){ $('view-login').classList.add('hidden'); $('view-solicit
 function entrarPortal(){
   $('view-login').classList.add('hidden'); $('view-solicitud').classList.add('hidden'); $('view-portal').classList.remove('hidden');
   renderSidebar(); renderHome();
+  // v4: iniciar sistema de notificaciones
+  iniciarNotificaciones();
 }
 
 function goPage(p){
@@ -973,6 +1004,11 @@ function doLogout(){
   if (!confirm('¿Cerrar sesión?')) return;
   localStorage.removeItem('portal_sesion');
   cerrarTool();  // sin id → cierra todas las herramientas abiertas
+  // v4: parar polling de notificaciones
+  if(typeof NOTIF_POLLING_TIMER !== 'undefined' && NOTIF_POLLING_TIMER){
+    clearInterval(NOTIF_POLLING_TIMER);
+    NOTIF_POLLING_TIMER = null;
+  }
   SESION = null;
   goLogin();
   $('login-email').value = '';
@@ -1009,6 +1045,159 @@ function doLogout(){
   // Enter para login rápido
   $('login-email').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 })();
+
+// ============================================================
+// v4: MÓDULO NOTIFICACIONES
+// ============================================================
+let NOTIF_CACHE = [];
+let NOTIF_POLLING_TIMER = null;
+
+async function apiNotif(action, payload){
+  const body = { secret: CFG.NOTIF_SECRET, action: action, payload: payload || {} };
+  const r = await fetch(CFG.NOTIF_URL, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+  });
+  if(!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error || 'error');
+  return j.data;
+}
+
+function iniciarNotificaciones(){
+  if(!SESION || !SESION.correo) return;
+  // Cargar de entrada
+  cargarNotificaciones();
+  // Polling cada 60 segundos
+  if(NOTIF_POLLING_TIMER) clearInterval(NOTIF_POLLING_TIMER);
+  NOTIF_POLLING_TIMER = setInterval(cargarNotificaciones, CFG.NOTIF_POLLING_MS);
+  // Wire eventos del panel (idempotente)
+  const bell = $('notif-bell');
+  const badgeWrap = document.querySelector('.notif-wrap');
+  if(bell && !bell.dataset.wired){
+    bell.addEventListener('click', togglePanelNotif);
+    if(badgeWrap){
+      const badge = $('notif-badge');
+      if(badge) badge.addEventListener('click', togglePanelNotif);
+    }
+    $('notif-cerrar').addEventListener('click', () => $('notif-panel').style.display = 'none');
+    $('notif-marcar-todas').addEventListener('click', marcarTodasLeidas);
+    // Cerrar panel al click afuera
+    document.addEventListener('click', e => {
+      const panel = $('notif-panel');
+      if(panel.style.display === 'none') return;
+      if(panel.contains(e.target) || bell.contains(e.target)) return;
+      panel.style.display = 'none';
+    });
+    bell.dataset.wired = '1';
+  }
+}
+
+async function cargarNotificaciones(){
+  if(!SESION || !SESION.correo) return;
+  try {
+    const items = await apiNotif('list_notificaciones', {
+      correo: SESION.correo,
+      limit: 50
+    });
+    NOTIF_CACHE = items || [];
+    actualizarBadgeNotif();
+    // Si el panel está abierto, refrescar contenido
+    if($('notif-panel').style.display !== 'none') renderPanelNotif();
+  } catch(e){
+    console.warn('cargar notif:', e.message);
+  }
+}
+
+function actualizarBadgeNotif(){
+  const noLeidas = NOTIF_CACHE.filter(n => Number(n.leida) !== 1).length;
+  const badge = $('notif-badge');
+  if(noLeidas > 0){
+    badge.textContent = noLeidas > 99 ? '99+' : noLeidas;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function togglePanelNotif(){
+  const panel = $('notif-panel');
+  if(panel.style.display === 'none' || !panel.style.display){
+    panel.style.display = '';
+    renderPanelNotif();
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+function renderPanelNotif(){
+  const lista = $('notif-lista');
+  if(!NOTIF_CACHE.length){
+    lista.innerHTML = '<div style="padding:24px;text-align:center;color:#6b7280;font-size:13px">📭 Sin notificaciones</div>';
+    return;
+  }
+  lista.innerHTML = NOTIF_CACHE.map(n => {
+    const noLeida = Number(n.leida) !== 1;
+    const cls = 'notif-item' + (noLeida ? ' no-leida' : '');
+    const fecha = formatFechaCorta(n.fecha_creacion);
+    return `<div class="${cls}" data-nid="${esc(n.id)}">
+      <div class="n-titulo">${esc(n.titulo)}</div>
+      <div class="n-mensaje">${esc(n.mensaje)}</div>
+      <div class="n-fecha">${fecha}</div>
+    </div>`;
+  }).join('');
+  lista.querySelectorAll('.notif-item').forEach(el => {
+    el.addEventListener('click', () => marcarLeida(el.dataset.nid));
+  });
+}
+
+function formatFechaCorta(iso){
+  if(!iso) return '';
+  try {
+    const d = new Date(iso);
+    if(isNaN(d.getTime())) return String(iso);
+    const ahora = new Date();
+    const diffMin = Math.floor((ahora - d) / 60000);
+    if(diffMin < 1) return 'ahora';
+    if(diffMin < 60) return 'hace ' + diffMin + ' min';
+    if(diffMin < 1440) return 'hace ' + Math.floor(diffMin/60) + ' h';
+    return d.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+  } catch(e){ return String(iso); }
+}
+
+async function marcarLeida(id){
+  if(!id) return;
+  const notif = NOTIF_CACHE.find(n => n.id === id);
+  if(!notif || Number(notif.leida) === 1) return; // ya está leída
+  // Update optimista
+  notif.leida = 1;
+  notif.fecha_lectura = new Date().toISOString();
+  actualizarBadgeNotif();
+  renderPanelNotif();
+  try {
+    await apiNotif('marcar_notif_leida', { correo: SESION.correo, id: id });
+  } catch(e){
+    console.warn('marcar leida:', e.message);
+    // Revertir en caso de fallo
+    notif.leida = 0;
+    actualizarBadgeNotif();
+    renderPanelNotif();
+  }
+}
+
+async function marcarTodasLeidas(){
+  NOTIF_CACHE.forEach(n => { n.leida = 1; });
+  actualizarBadgeNotif();
+  renderPanelNotif();
+  try {
+    await apiNotif('marcar_todas_leidas', { correo: SESION.correo });
+  } catch(e){
+    console.warn('marcar todas:', e.message);
+    // Si falla, recargamos para tener el estado real
+    cargarNotificaciones();
+  }
+}
 </script>
 </body>
 </html>
