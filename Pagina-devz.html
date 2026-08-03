@@ -93,7 +93,7 @@ a{color:var(--brand);text-decoration:none}
 
 /* Main */
 .p-main{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
-#page-home, #page-perfil, #page-config{flex:1;min-height:0;overflow-y:auto;padding:24px 28px}
+#page-home, #page-perfil, #page-config, #page-mensajes{flex:1;min-height:0;overflow-y:auto;padding:24px 28px}
 #page-tool{flex:1;min-height:0;display:flex;flex-direction:column}
 
 /* Barra superior de la herramienta embebida */
@@ -223,7 +223,7 @@ a{color:var(--brand);text-decoration:none}
   .p-side{position:absolute;top:0;bottom:0;left:0;z-index:20;transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 16px rgba(0,0,0,.15)}
   .p-side.open{transform:translateX(0)}
   .p-head-mobile{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:4px 8px}
-  #page-home, #page-perfil, #page-config{padding:18px 16px}
+  #page-home, #page-perfil, #page-config, #page-mensajes{padding:18px 16px}
   .p-title{font-size:19px}
   .p-side-back.show{display:block}
 }
@@ -370,6 +370,7 @@ a{color:var(--brand);text-decoration:none}
         <div class="p-side-tools-list" id="side-tools-list"><!-- se agregan items dinámicamente --></div>
         <button class="p-nav-item active" data-page="home" onclick="goPage('home')"><i class="ti ti-home"></i>Inicio</button>
         <button class="p-nav-item" data-page="perfil" onclick="goPage('perfil')"><i class="ti ti-user"></i>Mi perfil</button>
+        <button class="p-nav-item" data-page="mensajes" onclick="goPage('mensajes')" style="position:relative"><i class="ti ti-mail"></i>Mensajes<span id="side-mensajes-badge" style="display:none;position:absolute;right:14px;top:50%;transform:translateY(-50%);background:#F4492E;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;min-width:16px;text-align:center">0</span></button>
         <button class="p-nav-item" data-page="config" onclick="goPage('config')"><i class="ti ti-settings"></i>Configuración</button>
         <div class="p-nav-foot">
           <button class="p-nav-item" onclick="doLogout()"><i class="ti ti-logout"></i>Cerrar sesión</button>
@@ -392,6 +393,28 @@ a{color:var(--brand);text-decoration:none}
         <h2 class="p-title">Mi perfil</h2>
         <p class="p-sub">Datos de tu cuenta y permisos asignados.</p>
         <div class="p-profile-card" id="perfil-content"><!-- dinámico --></div>
+      </section>
+
+      <!-- PÁGINA: MENSAJES (v5) -->
+      <section id="page-mensajes" class="hidden">
+        <p class="p-crumb">Inicio · Mensajes</p>
+        <h2 class="p-title">Mensajes</h2>
+        <p class="p-sub">Notificaciones del sistema: solicitudes recibidas, aprobaciones, envíos y avisos.</p>
+
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 12px 0">
+          <div style="display:flex;gap:4px;background:#f3f4f6;padding:4px;border-radius:6px">
+            <button class="msg-filter" data-filtro="todas" style="padding:6px 14px;border:none;border-radius:4px;background:#1F4A8B;color:#fff;font-weight:600;font-size:12px;cursor:pointer">Todas <span class="msg-filter-count"></span></button>
+            <button class="msg-filter" data-filtro="no_leidas" style="padding:6px 14px;border:none;border-radius:4px;background:transparent;color:#374151;font-weight:600;font-size:12px;cursor:pointer">No leídas <span class="msg-filter-count"></span></button>
+            <button class="msg-filter" data-filtro="leidas" style="padding:6px 14px;border:none;border-radius:4px;background:transparent;color:#374151;font-weight:600;font-size:12px;cursor:pointer">Leídas <span class="msg-filter-count"></span></button>
+          </div>
+          <input id="msg-buscar" type="text" placeholder="Buscar en título o mensaje…" style="flex:1;min-width:180px;max-width:340px;padding:7px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;font-family:inherit">
+          <button id="msg-recargar" style="padding:7px 12px;border:1px solid #1F4A8B;background:#fff;color:#1F4A8B;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-refresh"></i>Recargar</button>
+          <button id="msg-marcar-todas" style="padding:7px 12px;border:none;background:#719C29;color:#fff;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer">Marcar todas leídas</button>
+        </div>
+
+        <div id="msg-lista" style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+          <div style="padding:24px;text-align:center;color:#6b7280">Cargando…</div>
+        </div>
       </section>
 
       <!-- PÁGINA: CONFIG -->
@@ -730,12 +753,13 @@ function entrarPortal(){
 }
 
 function goPage(p){
-  ['home','perfil','config','tool'].forEach(k=>{
+  ['home','perfil','mensajes','config','tool'].forEach(k=>{
     $('page-'+k).classList.toggle('hidden', k!==p);
   });
   document.querySelectorAll('.p-nav-item[data-page]').forEach(b=>b.classList.toggle('active', b.dataset.page===p));
   if (p==='perfil') renderPerfil();
   if (p==='config') renderConfig();
+  if (p==='mensajes') renderMensajes(); // v5
   // Ocultar el header horizontal del portal SÓLO en la vista de herramienta,
   // para no tapar los KPIs del dashboard u otras etiquetas superiores
   $('view-portal').classList.toggle('p-in-tool', p==='tool');
@@ -1112,6 +1136,7 @@ async function cargarNotificaciones(){
 
 function actualizarBadgeNotif(){
   const noLeidas = NOTIF_CACHE.filter(n => Number(n.leida) !== 1).length;
+  // Badge de la campana en el header
   const badge = $('notif-badge');
   if(noLeidas > 0){
     badge.textContent = noLeidas > 99 ? '99+' : noLeidas;
@@ -1119,6 +1144,19 @@ function actualizarBadgeNotif(){
   } else {
     badge.style.display = 'none';
   }
+  // v5: badge en el sidebar "Mensajes"
+  const sideBadge = $('side-mensajes-badge');
+  if(sideBadge){
+    if(noLeidas > 0){
+      sideBadge.textContent = noLeidas > 99 ? '99+' : noLeidas;
+      sideBadge.style.display = '';
+    } else {
+      sideBadge.style.display = 'none';
+    }
+  }
+  // Si la página Mensajes está abierta, refrescar
+  const pageMsg = $('page-mensajes');
+  if(pageMsg && !pageMsg.classList.contains('hidden')) renderMensajes();
 }
 
 function togglePanelNotif(){
@@ -1197,6 +1235,123 @@ async function marcarTodasLeidas(){
     // Si falla, recargamos para tener el estado real
     cargarNotificaciones();
   }
+}
+
+// ============================================================
+// v5: PÁGINA COMPLETA "MENSAJES"
+// ============================================================
+let MSG_FILTRO = 'todas'; // 'todas' | 'no_leidas' | 'leidas'
+let MSG_BUSQUEDA = '';
+let MSG_WIRED = false;
+
+async function renderMensajes(){
+  // Wire de eventos una sola vez
+  if(!MSG_WIRED){
+    document.querySelectorAll('.msg-filter').forEach(b => {
+      b.addEventListener('click', () => {
+        MSG_FILTRO = b.dataset.filtro;
+        actualizarFiltrosVisual();
+        pintarListaMensajes();
+      });
+    });
+    $('msg-buscar').addEventListener('input', e => {
+      MSG_BUSQUEDA = String(e.target.value||'').toLowerCase().trim();
+      pintarListaMensajes();
+    });
+    $('msg-recargar').addEventListener('click', async () => {
+      const btn = $('msg-recargar');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ti ti-refresh"></i>Cargando…';
+      await cargarNotificaciones();
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-refresh"></i>Recargar';
+    });
+    $('msg-marcar-todas').addEventListener('click', marcarTodasLeidas);
+    MSG_WIRED = true;
+  }
+  // Refresh de datos al entrar (por si hay mensajes nuevos desde la última carga)
+  cargarNotificaciones();
+  actualizarFiltrosVisual();
+  pintarListaMensajes();
+}
+
+function actualizarFiltrosVisual(){
+  // Estilos de botones activos
+  document.querySelectorAll('.msg-filter').forEach(b => {
+    const activo = b.dataset.filtro === MSG_FILTRO;
+    b.style.background = activo ? '#1F4A8B' : 'transparent';
+    b.style.color = activo ? '#fff' : '#374151';
+  });
+  // Contadores
+  const total = NOTIF_CACHE.length;
+  const noLeidas = NOTIF_CACHE.filter(n => Number(n.leida) !== 1).length;
+  const leidas = total - noLeidas;
+  document.querySelectorAll('.msg-filter').forEach(b => {
+    const span = b.querySelector('.msg-filter-count');
+    if(!span) return;
+    let n = 0;
+    if(b.dataset.filtro === 'todas') n = total;
+    else if(b.dataset.filtro === 'no_leidas') n = noLeidas;
+    else if(b.dataset.filtro === 'leidas') n = leidas;
+    span.textContent = n > 0 ? '(' + n + ')' : '';
+  });
+}
+
+function pintarListaMensajes(){
+  const cont = $('msg-lista');
+  let items = NOTIF_CACHE.slice();
+  // Filtrar por leídas/no leídas
+  if(MSG_FILTRO === 'no_leidas') items = items.filter(n => Number(n.leida) !== 1);
+  else if(MSG_FILTRO === 'leidas') items = items.filter(n => Number(n.leida) === 1);
+  // Buscar en título/mensaje
+  if(MSG_BUSQUEDA){
+    items = items.filter(n =>
+      String(n.titulo||'').toLowerCase().includes(MSG_BUSQUEDA) ||
+      String(n.mensaje||'').toLowerCase().includes(MSG_BUSQUEDA)
+    );
+  }
+  if(!items.length){
+    const msg = MSG_BUSQUEDA ? 'Sin resultados para "' + esc(MSG_BUSQUEDA) + '"' :
+      MSG_FILTRO === 'no_leidas' ? '📭 No hay mensajes sin leer' :
+      MSG_FILTRO === 'leidas' ? 'No hay mensajes leídos todavía' :
+      '📭 Sin mensajes por ahora';
+    cont.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#6b7280;font-size:13px">' + msg + '</div>';
+    return;
+  }
+  cont.innerHTML = items.map(n => {
+    const noLeida = Number(n.leida) !== 1;
+    const fondo = noLeida ? '#eff6ff' : '#fff';
+    const borde = noLeida ? '3px solid #1F4A8B' : '3px solid transparent';
+    const fechaCorta = formatFechaCorta(n.fecha_creacion);
+    const fechaLarga = n.fecha_creacion ? new Date(n.fecha_creacion).toLocaleString('es-AR') : '';
+    // Icono según tipo de evento
+    const iconoTipo = {
+      'nueva_solicitud': '📥',
+      'solicitud_aprobado': '✅',
+      'solicitud_rechazado': '❌',
+      'solicitud_entregado': '📦',
+      'insumo_enviado': '🚚',
+      'test': '🧪'
+    }[n.tipo_evento] || '🔔';
+    return `<div class="msg-card" data-nid="${esc(n.id)}" style="padding:14px 18px;border-bottom:1px solid #e5e7eb;background:${fondo};border-left:${borde};cursor:${noLeida?'pointer':'default'};transition:background .15s">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;color:#1F4A8B;font-size:14px;margin-bottom:4px">${iconoTipo} ${esc(n.titulo)}</div>
+          <div style="color:#374151;font-size:13px;line-height:1.5;white-space:pre-line;margin-bottom:6px">${esc(n.mensaje)}</div>
+          <div style="color:#6b7280;font-size:11px" title="${esc(fechaLarga)}">${fechaCorta}</div>
+        </div>
+        ${noLeida?'<span style="background:#1F4A8B;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;flex-shrink:0">NUEVO</span>':''}
+      </div>
+    </div>`;
+  }).join('');
+  cont.querySelectorAll('.msg-card').forEach(el => {
+    el.addEventListener('click', () => marcarLeida(el.dataset.nid));
+    el.addEventListener('mouseenter', () => { if(el.style.cursor === 'pointer') el.style.background = '#dbeafe'; });
+    el.addEventListener('mouseleave', () => {
+      const noLeida = el.style.cursor === 'pointer';
+      el.style.background = noLeida ? '#eff6ff' : '#fff';
+    });
+  });
 }
 </script>
 </body>
