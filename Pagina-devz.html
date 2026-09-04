@@ -474,10 +474,10 @@ const CFG = {
   // (cf, tr o devz). 'directivo' y 'administrativo' no dependen de área.
   // Columnas esperadas en USUARIOS_GRAL: G=ROL, H=AREA
   ROL_PRESETS: {
-    'operario':      { cf_carga:1, cf_panel:0, tr_carga:1, tr_panel:0, boletin:0, inund_carga:1 },
-    'tecnico':       { cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, boletin:1, inund_carga:1 },
-    'directivo':     { cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, boletin:1, inund_carga:1 },
-    'administrativo':{ cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, boletin:1, inund_carga:1 }
+    'operario':      { cf_carga:1, cf_panel:0, tr_carga:1, tr_panel:0, ch_carga:1, ch_panel:0, boletin:0 },
+    'tecnico':       { cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, ch_carga:1, ch_panel:1, boletin:1 },
+    'directivo':     { cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, ch_carga:1, ch_panel:1, boletin:1 },
+    'administrativo':{ cf_carga:1, cf_panel:1, tr_carga:1, tr_panel:1, ch_carga:1, ch_panel:1, boletin:1 }
   },
 
   // Herramientas del portal — modificá URLs cuando estén los archivos disponibles
@@ -511,6 +511,16 @@ const CFG = {
           url:'https://javiepidec-cmd.github.io/Mapa-hidrometrico-carga-centro-evacuados/mapa_hidrometrico_v23.html' }
       ]
     },
+   
+    {
+      id:'tr', nombre:'SIVET-Chagas', dep:'Dir. Provincial de Chagas',
+      tools:[
+        { id:'ch_mapa', perm:'ch_carga', icono:'ti-home-search', titulo:'Mapa de carga', sub:'Relevamiento entomológico y viviendas SIVET-Chagas',
+          url:'https://javiepidec-cmd.github.io/mapa-carga-sivet-chagas/MAPA-SIVET-CHAGAS-V2.html' },
+        { id:'ch_panel', perm:'ch_panel', icono:'ti-layout-dashboard', titulo:'Panel general', sub:'Cobertura, positividad y evolución temporal',
+            url:'https://javiepidec-cmd.github.io/Panel-General-SiveT-Chagas/PANEL-CHAGAS-ENTOMO-V3.html' },
+      ]
+    },
   ]
 };
 
@@ -518,7 +528,7 @@ const CFG = {
 // ESTADO GLOBAL
 // ============================================================
 let SESION = null;      // { correo, nombre, establecimiento, rol, permisos }
-let PREFS = { view:'cards', orden:['cf','tr','devz'] };
+let PREFS = { view:'cards', orden:['cf','tr','devz','ch'] };
 // Herramientas abiertas simultáneamente (múltiples iframes).
 // OPEN_TOOLS = [{ id, titulo, url }] · ACTIVE_TOOL_ID = id de la que se está viendo
 const OPEN_TOOLS = [];
@@ -577,7 +587,12 @@ function resolverPermisos(rol, area){
       base.cf_carga = 0; base.cf_panel = 0;
       base.tr_carga = 0; base.tr_panel = 0;
       base.boletin = 0;
+      } else if (areaKey === 'ch'){
+      base.cf_carga = 0; base.cf_panel = 0;
+      base.tr_carga = 0; base.tr_panel = 0;
+      base.boletin  = 0;
     }
+    
     // Si area está vacía o dice 'todas', quedan todas las áreas habilitadas
     // (útil para casos excepcionales como un técnico multi-área)
   }
@@ -590,7 +605,7 @@ const ROL_NOMBRES = {
   'operario':'Operario de carga', 'tecnico':'Técnico',
   'directivo':'Directivo', 'administrativo':'Administrativo'
 };
-const AREA_NOMBRES = { 'cf':'Vectores', 'tr':'Tenencia responsable', 'devz':'Inundaciones', 'todas':'Todas las áreas' };
+const AREA_NOMBRES = { 'cf':'Vectores', 'tr':'Tenencia responsable', 'devz':'Inundaciones', 'todas':'Todas las áreas','ch':'Chagas' };
 
 function displayRolLargo(rol, area){
   const r = ROL_NOMBRES[rol] || rol || '—';
@@ -600,7 +615,7 @@ function displayRolLargo(rol, area){
 }
 
 function displayRolCorto(rol, area){
-  const abrev = { 'cf':'CF', 'tr':'TR', 'devz':'Inund.', 'todas':'Todas' };
+  const abrev = { 'cf':'CF', 'tr':'TR', 'devz':'Inund.', 'todas':'Todas','ch':'CH' };
   const r = ROL_NOMBRES[rol] || rol || '—';
   if (rol === 'directivo' || rol === 'administrativo') return r;
   const a = abrev[area] || '';
@@ -980,6 +995,8 @@ function renderPerfil(){
         ${chip(p.tr_carga, 'TR carga')}
         ${chip(p.tr_panel, 'TR panel')}
         ${chip(p.boletin,  'Boletín')}
+        ${chip(p.ch_carga, 'CH carga')}
+        ${chip(p.ch_panel, 'CH panel')}
       </div>
     </div>
   `;
